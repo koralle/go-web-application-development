@@ -1,0 +1,31 @@
+
+name: Lint Source Code with golangci-lint-with-reviewdog
+
+on:
+  pull_request:
+    branches: 
+      # mainブランチへのPR時にワークフローを実行する
+      - main
+
+jobs:
+  golangci-lint-with-reviewdog:
+    strategy:
+      fail-fast: false
+      matrix:
+        go: [1.17, 1.18, 1.19]
+        os: [macos-latest, windows-latest, ubuntu-latest]
+
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v3
+        
+      - name: golangci-lint
+        uses: reviewdog/action-golangci-lint@v2
+        with:
+          cache: false
+          github_token: ${{ github.token }}
+          go_version: ${{ matrix.go }}
+          golangci_lint_flags: "--enable-all --exclude-use-default=false"
+          golangci_lint_version: v1.48.0
