@@ -2,22 +2,31 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"golang.org/x/sync/errgroup"
 )
 
-func Run(ctx context.Context, l net.Listener) error {
+type Server struct {
+	srv *http.Server
+	l   net.Listener
+}
 
-	// HTTPサーバーの作成
-	s := &http.Server{
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprintf(w, "Hello, %s!", r.URL.Path[1:])
-		}),
+func NewServer(l net.Listener, mux http.Handler) *Server {
+	return &Server{
+		srv: &http.Server{Handler: mux},
+		l:   l,
 	}
+}
+
+func (s *Server) Run(ctx context.Context) error {
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
 	eg, ctx := errgroup.WithContext(ctx)
 
@@ -25,7 +34,7 @@ func Run(ctx context.Context, l net.Listener) error {
 	// 別のゴルーチンで作成したHTTPサーバーの起動
 	eg.Go(func() error {
 		// HTTPサーバーの起動
-		if err := s.Serve(l); err != nil && err != http.ErrServerClosed {
+		if err := s.srv.Serve(s.l); err != nil && err != http.ErrServerClosed {
 			log.Printf("failed to close: %+v", err)
 			return err
 		}
@@ -37,7 +46,7 @@ func Run(ctx context.Context, l net.Listener) error {
 	// チャネルからの終了通知の待機
 	<-ctx.Done()
 
-	if err := s.Shutdown(context.Background()); err != nil {
+	if err := s.srv.Shutdown(context.Background()); err != nil {
 		log.Printf("failed to shutdown: %v", err)
 	}
 
