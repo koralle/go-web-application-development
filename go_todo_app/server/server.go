@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -10,33 +9,24 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/koralle/go-web-application-development/go_todo_app/config"
 	"golang.org/x/sync/errgroup"
 )
 
-func Run(ctx context.Context) error {
+type Server struct {
+	srv *http.Server
+	l   net.Listener
+}
+
+func NewServer(l net.Listener, mux http.Handler) *Server {
+	return &Server{
+		srv: &http.Server{Handler: mux},
+		l:   l,
+	}
+}
+
+func (s *Server) Run(ctx context.Context) error {
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	defer stop()
-
-	cfg, err := config.New()
-	if err != nil {
-		return err
-	}
-
-	l, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.Port))
-	if err != nil {
-		log.Fatalf("failed to listen port %d: %v", cfg.Port, err)
-	}
-
-	url := fmt.Sprintf("http://%s", l.Addr().String())
-	log.Printf("start with: %v", url)
-
-	// HTTPサーバーの作成
-	s := &http.Server{
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprintf(w, "Hello, %s!", r.URL.Path[1:])
-		}),
-	}
 
 	eg, ctx := errgroup.WithContext(ctx)
 
@@ -44,7 +34,7 @@ func Run(ctx context.Context) error {
 	// 別のゴルーチンで作成したHTTPサーバーの起動
 	eg.Go(func() error {
 		// HTTPサーバーの起動
-		if err := s.Serve(l); err != nil && err != http.ErrServerClosed {
+		if err := s.srv.Serve(s.l); err != nil && err != http.ErrServerClosed {
 			log.Printf("failed to close: %+v", err)
 			return err
 		}
@@ -56,7 +46,7 @@ func Run(ctx context.Context) error {
 	// チャネルからの終了通知の待機
 	<-ctx.Done()
 
-	if err := s.Shutdown(context.Background()); err != nil {
+	if err := s.srv.Shutdown(context.Background()); err != nil {
 		log.Printf("failed to shutdown: %v", err)
 	}
 
