@@ -10,19 +10,15 @@ on:
 
 jobs:
   test:
-    strategy:
-      fail-fast: false
-      matrix:
-        go: [1.17, 1.18, 1.19]
-        os: [macos-latest, windows-latest, ubuntu-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/setup-go@v3
         with:
           go-version: '>=1.18'
       - uses: actions/checkout@v3
-      - run:
+      - run: |
+          cd go_todo_app
           go test ./... -coverprofile=coverage.out
       - name: report coverage
         uses: k1LoW/octocov-action@v0
