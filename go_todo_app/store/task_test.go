@@ -8,6 +8,8 @@ import (
 	"github.com/koralle/go-web-application-development/go_todo_app/clock"
 	"github.com/koralle/go-web-application-development/go_todo_app/entity"
 	"github.com/koralle/go-web-application-development/go_todo_app/testutil"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 func TestRepository_ListTasks(t *testing.T) {
