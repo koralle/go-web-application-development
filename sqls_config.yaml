@@ -1,0 +1,14 @@
+lowercaseKeywords: false
+
+connections:
+  - alias: mysql
+    driver: mysql
+    proto: tcp
+    user: todo
+    passwd: todo
+    host: 127.0.0.1
+    port: 33306
+    dbName: todo
+    params:
+      autocommit: "true"
+      tls: skip-verify
