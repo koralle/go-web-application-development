@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/koralle/go-web-application-development/go_todo_app/entity"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 // 全てのタスクを取得するメソッド
