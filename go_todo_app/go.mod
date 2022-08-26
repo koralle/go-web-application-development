@@ -23,6 +23,6 @@ replace github.com/koralle/go-web-application-development/go_todo_app/server => 
 
 replace github.com/koralle/go-web-application-development/go_todo_app/config => ../config
 
-replace github.com/kolalle/go-web-application-development/go_todo_app/store => ../store
+replace github.com/koralle/go-web-application-development/go_todo_app/store => ../store
 
-replace github.com/kolalle/go-web-application-development/go_todo_app/entity => ../entity
+replace github.com/koralle/go-web-application-development/go_todo_app/entity => ../entity
