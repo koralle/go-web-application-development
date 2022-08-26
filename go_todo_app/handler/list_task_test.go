@@ -1,12 +1,13 @@
 package handler
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/koralle/go-web-application-development/go_todo_app/entity"
-	"github.com/koralle/go-web-application-development/go_todo_app/store"
 	"github.com/koralle/go-web-application-development/go_todo_app/testutil"
 )
 
@@ -17,17 +18,17 @@ func TestListTask(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		tasks map[entity.TaskID]*entity.Task
+		tasks []*entity.Task
 		want  want
 	}{
 		"ok": {
-			tasks: map[entity.TaskID]*entity.Task{
-				1: {
+			tasks: []*entity.Task{
+				{
 					ID:     1,
 					Title:  "test1",
 					Status: "todo",
 				},
-				2: {
+				{
 					ID:     2,
 					Title:  "test2",
 					Status: "todo",
@@ -39,7 +40,7 @@ func TestListTask(t *testing.T) {
 			},
 		},
 		"empty": {
-			tasks: map[entity.TaskID]*entity.Task{},
+			tasks: []*entity.Task{},
 			want: want{
 				status:  http.StatusOK,
 				rspFile: "testdata/list_task/empty_rsp.json.golden",
@@ -54,7 +55,14 @@ func TestListTask(t *testing.T) {
 
 			w := httptest.NewRecorder()
 			r := httptest.NewRequest(http.MethodGet, "/tasks", nil)
-			sut := ListTask{Store: &store.TaskStore{Tasks: tt.tasks}}
+			moq := &ListTasksServiceMock{}
+			moq.ListTasksFunc = func(ctx context.Context) (entity.Tasks, error) {
+				if tt.tasks != nil {
+					return tt.tasks, nil
+				}
+				return nil, errors.New("errors from mock")
+			}
+			sut := ListTask{Service: moq}
 			sut.ServeHTTP(w, r)
 
 			resp := w.Result()
