@@ -31,3 +31,13 @@ replace github.com/koralle/go-web-application-development/go_todo_app/config => 
 replace github.com/koralle/go-web-application-development/go_todo_app/store => ../store
 
 replace github.com/koralle/go-web-application-development/go_todo_app/entity => ../entity
+
+replace github.com/koralle/go-web-application-development/go_todo_app/clock => ../clock
+
+replace github.com/koralle/go-web-application-development/go_todo_app/handler => ../handler
+
+replace github.com/koralle/go-web-application-development/go_todo_app/mux => ../mux
+
+replace github.com/koralle/go-web-application-development/go_todo_app/service => ../service
+
+replace github.com/koralle/go-web-application-development/go_todo_app/testutil => ../testutil
