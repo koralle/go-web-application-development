@@ -27,6 +27,9 @@ type JWTer struct {
 	Clocker               clock.Clocker
 }
 
+type userIDKey struct{}
+type roleKey struct{}
+
 const (
 	RoleKey     = "role"
 	UserNameKey = "user_name"
@@ -36,6 +39,29 @@ const (
 type Store interface {
 	Save(ctx context.Context, key string, userID entity.UserID) error
 	Load(ctx context.Context, key string) (entity.UserID, error)
+}
+
+func SetUserID(ctx context.Context, uid entity.UserID) context.Context {
+	return context.WithValue(ctx, userIDKey{}, uid)
+}
+
+func GetUserID(ctx context.Context) (entity.UserID, bool) {
+	id, ok := ctx.Value(userIDKey{}).(entity.UserID)
+	return id, ok
+}
+
+func SetRole(ctx context.Context, tok jwt.Token) context.Context {
+	get, ok := tok.Get(RoleKey)
+	if !ok {
+		return context.WithValue(ctx, roleKey{}, "")
+	}
+
+	return context.WithValue(ctx, roleKey{}, get)
+}
+
+func getRole(ctx context.Context) (string, bool) {
+	role, ok := ctx.Value(roleKey{}).(string)
+	return role, ok
 }
 
 func NewJWTer(s Store, c clock.Clocker) (*JWTer, error) {
@@ -113,4 +139,31 @@ func (j *JWTer) GetToken(ctx context.Context, r *http.Request) (jwt.Token, error
 	}
 
 	return token, nil
+}
+
+func (j *JWTer) FillContext(r *http.Request) (*http.Request, error) {
+	token, err := j.GetToken(r.Context(), r)
+	if err != nil {
+		return nil, err
+	}
+
+	uid, err := j.Store.Load(r.Context(), token.JwtID())
+	if err != nil {
+		return nil, err
+	}
+
+	ctx := SetUserID(r.Context(), uid)
+
+	ctx = SetRole(r.Context(), token)
+	clone := r.Clone(ctx)
+	return clone, nil
+}
+
+func IsAdmin(ctx context.Context) bool {
+	role, ok := getRole(ctx)
+	if !ok {
+		return false
+	}
+
+	return role == "admin"
 }
